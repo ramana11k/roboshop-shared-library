@@ -8,7 +8,8 @@ pipeline {
 
      environment { 
         packageVersion = ''
-        nexusURL = '172.31.93.195:8081'
+        //can be maitained in pipeline globals
+       // nexusURL = '172.31.93.195:8081'
     }
 
     options {
@@ -59,7 +60,7 @@ pipeline {
             steps {
                 sh """
                     ls -la
-                    zip -q -r catalogue.zip ./* -x ".git" -x "*.zip"
+                    zip -q -r ${configMap.component}.zip ./* -x ".git" -x "*.zip"
                     ls -ltr
                 """
             }
@@ -87,15 +88,15 @@ pipeline {
                 nexusArtifactUploader(
                     nexusVersion: 'nexus3',
                     protocol: 'http',
-                    nexusUrl: "${nexusURL}",
+                    nexusUrl: pipeline.Globals.nexusURL(),
                     groupId: 'com.roboshop',
                     version: "${packageVersion}",
-                    repository: 'catalogue',
+                    repository: "${configMap.component}",
                     credentialsId: 'nexus-auth',
                     artifacts: [
-                        [artifactId: 'catalogue',
+                        [artifactId: "${configMap.component}",
                         classifier: '',
-                        file: 'catalogue.zip',
+                        file: "${configMap.component}.zip",
                         type: 'zip']
                     ]
                 )
@@ -110,18 +111,19 @@ pipeline {
                 expression {
                     params.Deploy == 'true'
                 }
-
             }
             
             steps {
-               build job: 'catalogue-deploy', wait: true, 
-               parameters: [string(name: 'version', value: "${packageVersion}"), 
-               string(name: 'environment', value: "dev") 
-               ]
+                script{
+                    def params = [
+                        string(name: 'version', value: "$packageVersion"), 
+                        string(name: 'environment', value: "dev") 
+                    ]
+                    build job: "${configMap.component}-deploy", wait: true, parameters: params
+
+                }
             }     
         }
-       
-
     }
     // POST BUILD
     post { 
