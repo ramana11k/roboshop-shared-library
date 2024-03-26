@@ -13,7 +13,7 @@ def call(Map configMap) {
         }
 
         options {
-            ansiColor('xterm')
+           // ansiColor('xterm')
             timeout(time: 1, unit: 'HOURS') 
             disableConcurrentBuilds() //It wont allow two builds at a time
         }
